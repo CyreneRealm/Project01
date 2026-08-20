@@ -83,5 +83,4 @@ Dữ liệu thời tiết được lưu vào schema `p1` trong cơ sở dữ li�
 | `inserted_at` | `TIMESTAMP` | Thời điểm nạp dữ liệu vào DB (Mặc định: `NOW()`) |
 | `utc_offset` | `TEXT` | Độ lệch múi giờ UTC (ví dụ: `+07:00`) |
 
-*Lưu ý: Ràng buộc duy nhất `unique_city_time UNIQUE (city, observation_time)` giúp đảm bảo không có bản ghi trùng lặp cho cùng một thành phố tại cùng một thời điểm quan trắc.*
 
