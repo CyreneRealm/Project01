@@ -35,7 +35,7 @@ Hệ thống ETL được đóng gói bằng Docker, tự động trích xuất 
 ### Cấu Hình
 1. Mở file `dags/get_api.py` và thay thế giá trị `api_key` bằng mã API Key của bạn:
    ```python
-   api_key = "MÃ_API_KEY_CỦA_BẠN"
+   api_key = "?"
    ```
 
 2. Kiểm tra cấu hình kết nối PostgreSQL trong file `docker-compose.yml`:
