@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: local_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: database01
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./airflow_init.sql:/docker-entrypoint-initdb.d/airflow_init.sql
+    networks:
+      - my-network
+
+  airflow:
+    container_name: airflow_con
+    image: apache/airflow:3.2.2
+    command: standalone
+    ports:
+      - "8000:8080"
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@db:5432/airflow_db
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/passwords.json
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./table:/opt/airflow/table
+      - ./passwords.json:/opt/airflow/passwords.json
+    depends_on:
+      - db
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

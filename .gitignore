@@ -1,0 +1,25 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python compiled cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Sensitive config/passwords
+passwords.json
+.env
+
+# Docker state/volumes
+postgres_data/
+
+# Editor/IDE configs
+.vscode/
+.idea/
+
+# Local text files
+text.txt
+
