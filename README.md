@@ -24,7 +24,7 @@ Pipeline ETL đóng gói bằng Docker, thu thập dữ liệu thời tiết Hà
 
 ## Cài đặt
 1. Cần có Docker & Docker Compose, và [API key OpenWeatherMap](https://openweathermap.org/api).
-2. Điền API key vào `dags/get_api.py` (khuyến khích dùng file `.env`).
+2. Điền API key vào `dags/get_api.py` 
 3. Chỉnh cấu hình PostgreSQL trong `docker-compose.yml` nếu cần.
 
 ## Chạy
