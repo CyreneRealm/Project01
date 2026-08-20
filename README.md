@@ -1,18 +1,14 @@
-# Pipeline Thu Thập Dữ Liệu Thời Tiết Tự Động (ETL)
+# Weather ETL Pipeline
 
-Hệ thống ETL được đóng gói bằng Docker, tự động trích xuất dữ liệu thời tiết Hà Nội từ OpenWeatherMap API, xử lý/biến đổi dữ liệu và tải vào cơ sở dữ liệu PostgreSQL. Quy trình được lập lịch và điều phối tự động mỗi giờ một lần thông qua Apache Airflow.
+Pipeline ETL đóng gói bằng Docker, thu thập dữ liệu thời tiết Hà Nội từ OpenWeatherMap API, xử lý và nạp vào PostgreSQL. Điều phối tự động mỗi giờ bằng Apache Airflow.
 
----
+## Tính năng
+- **Extract**: Gọi REST API bằng thư viện `requests`
+- **Orchestrate**: DAG Airflow chạy mỗi giờ, có retry và xử lý lỗi
+- **Idempotent load**: `UPSERT` trên `(city, observation_time)` để tránh trùng lặp
+- **Containerized**: Docker Compose, nhiều container
 
-## Tính Năng Nổi Bật
-- **Trích xuất dữ liệu (Data Extraction)**: Tự động gọi REST API bằng thư viện `requests` của Python.
-- **Điều phối quy trình (Workflow Orchestration)**: Lập lịch chạy mỗi giờ bằng Apache Airflow DAGs với cấu hình tự động thử lại khi lỗi (retries) và quản lý lỗi hiệu quả.
-- **Lưu trữ tối ưu (Idempotent Storage)**: Thiết kế bảng PostgreSQL với tính năng `UPSERT` (`ON CONFLICT DO NOTHING` trên cặp khóa duy nhất `city` + `observation_time`) nhằm ngăn chặn việc ghi trùng lặp dữ liệu lịch sử.
-- **Đóng gói hệ thống (Containerization)**: Sử dụng Docker và Docker Compose để thiết lập môi trường chạy đa container độc lập, dễ dàng triển khai.
-
----
-
-## Cấu Trúc Thư Mục
+## Cấu trúc
 ```text
 .
 ├── dags/
@@ -26,61 +22,34 @@ Hệ thống ETL được đóng gói bằng Docker, tự động trích xuất 
 
 ---
 
-## Hướng Dẫn Cài Đặt & Cấu Hinh
+## Cài đặt
+1. Cần có Docker & Docker Compose, và [API key OpenWeatherMap](https://openweathermap.org/api).
+2. Điền API key vào `dags/get_api.py` (khuyến khích dùng file `.env`).
+3. Chỉnh cấu hình PostgreSQL trong `docker-compose.yml` nếu cần.
 
-### Yêu Cầu Hệ Thống
-- Đã cài đặt Docker & Docker Compose.
-- Có API Key từ dịch vụ [OpenWeatherMap](https://openweathermap.org/api).
+## Chạy
+```bash
+docker compose up -d
+```
+Tải image PostgreSQL 16 Alpine + Airflow 3.2.2 và khởi chạy các container.
 
-### Cấu Hình
-1. Mở file `dags/get_api.py` và thay thế giá trị `api_key` bằng mã API Key của bạn:
-   ```python
-   api_key = "?"
-   ```
+- Giao diện Airflow: `http://localhost:8000`
+- Kiểm tra dữ liệu:
+```bash
+  docker compose exec db psql -U <POSTGRES_USER> -d <POSTGRES_DB>
+```
+```sql
+  SELECT * FROM p1.raw_weather_data;
+```
 
-2. Kiểm tra cấu hình kết nối PostgreSQL trong file `docker-compose.yml`:
-   - Các thông tin kết nối mặc định được thiết lập cho môi trường phát triển cục bộ (local development).
-   - **Lưu ý bảo mật**: Đối với môi trường thực tế, hãy sử dụng biến môi trường hoặc file `.env` (được đưa vào `.gitignore`) để cấu hình thông tin bảo mật.
-
----
-
-## Khởi Chạy Dự Án
-
-1. **Khởi chạy các container**:
-   Mở terminal tại thư mục gốc của dự án và chạy lệnh sau:
-   ```bash
-   docker compose up -d
-   ```
-   Lệnh này sẽ tải các image cần thiết (PostgreSQL 16 Alpine, Apache Airflow 3.2.2) và chạy các container dưới nền.
-
-2. **Truy cập giao diện Apache Airflow**:
-   - Mở trình duyệt và truy cập: `http://localhost:8000`.
-
-
-3. **Kiểm tra dữ liệu đã nạp**:
-   Để xác minh dữ liệu đã được ghi thành công vào PostgreSQL, truy cập vào bên trong container cơ sở dữ liệu (thay thế `<POSTGRES_USER>` và `<POSTGRES_DB>` tương ứng với cấu hình của bạn):
-   ```bash
-   docker compose exec db psql -U <POSTGRES_USER> -d <POSTGRES_DB>
-   ```
-   Chạy truy vấn SQL sau để kiểm tra:
-   ```sql
-   SELECT * FROM p1.raw_weather_data;
-   ```
-
----
-
-## Thiết Kế Cơ Sở Dữ Liệu (Database Schema)
-Dữ liệu thời tiết được lưu vào schema `p1` trong cơ sở dữ liệu mục tiêu:
-
-| Tên Cột | Kiểu Dữ Liệu | Ràng Buộc / Mô Tả |
+## Schema (`p1.raw_weather_data`)
+| Cột | Kiểu | Mô tả |
 |---|---|---|
-| `id` | `SERIAL` | `PRIMARY KEY` |
-| `city` | `TEXT` | Tên thành phố (ví dụ: Hanoi) |
-| `temperature` | `FLOAT` | Nhiệt độ (độ C) |
-| `weather_descriptions` | `TEXT` | Mô tả trạng thái thời tiết |
-| `wind_speed` | `FLOAT` | Tốc độ gió (m/s) |
-| `observation_time` | `TIMESTAMP` | Thời gian quan trắc thời tiết |
-| `inserted_at` | `TIMESTAMP` | Thời điểm nạp dữ liệu vào DB (Mặc định: `NOW()`) |
-| `utc_offset` | `TEXT` | Độ lệch múi giờ UTC (ví dụ: `+07:00`) |
-
-
+| `id` | SERIAL | Khóa chính |
+| `city` | TEXT | Tên thành phố |
+| `temperature` | FLOAT | °C |
+| `weather_descriptions` | TEXT | Mô tả thời tiết |
+| `wind_speed` | FLOAT | m/s |
+| `observation_time` | TIMESTAMP | Thời gian quan trắc |
+| `inserted_at` | TIMESTAMP | Thời điểm nạp (mặc định `NOW()`) |
+| `utc_offset` | TEXT | Lệch múi giờ UTC (vd `+07:00`) |
