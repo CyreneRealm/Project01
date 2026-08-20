@@ -38,11 +38,9 @@ Hệ thống ETL được đóng gói bằng Docker, tự động trích xuất 
    api_key = "MÃ_API_KEY_CỦA_BẠN"
    ```
 
-2. (Tùy chọn) Kiểm tra cấu hình kết nối PostgreSQL trong file `docker-compose.yml`:
-   - **Tài khoản (Database User)**: `postgres_user`
-   - **Mật khẩu (Database Password)**: `postgres_password`
-   - **Tên cơ sở dữ liệu (Database Name)**: `database01`
-   - **Cổng kết nối ngoài (Exposed Port)**: `5433` (được ánh xạ từ cổng `5432` trong container)
+2. Kiểm tra cấu hình kết nối PostgreSQL trong file `docker-compose.yml`:
+   - Các thông tin kết nối mặc định được thiết lập cho môi trường phát triển cục bộ (local development).
+   - **Lưu ý bảo mật**: Đối với môi trường thực tế, hãy sử dụng biến môi trường hoặc file `.env` (được đưa vào `.gitignore`) để cấu hình thông tin bảo mật.
 
 ---
 
@@ -57,12 +55,12 @@ Hệ thống ETL được đóng gói bằng Docker, tự động trích xuất 
 
 2. **Truy cập giao diện Apache Airflow**:
    - Mở trình duyệt và truy cập: `http://localhost:8000`.
-   - Mật khẩu đăng nhập sẽ được tự động tạo và lưu trữ trong file `passwords.json`.
+
 
 3. **Kiểm tra dữ liệu đã nạp**:
-   Để xác minh dữ liệu đã được ghi thành công vào PostgreSQL, truy cập vào bên trong container cơ sở dữ liệu:
+   Để xác minh dữ liệu đã được ghi thành công vào PostgreSQL, truy cập vào bên trong container cơ sở dữ liệu (thay thế `<POSTGRES_USER>` và `<POSTGRES_DB>` tương ứng với cấu hình của bạn):
    ```bash
-   docker compose exec db psql -U postgres_user -d database01
+   docker compose exec db psql -U <POSTGRES_USER> -d <POSTGRES_DB>
    ```
    Chạy truy vấn SQL sau để kiểm tra:
    ```sql
@@ -72,7 +70,7 @@ Hệ thống ETL được đóng gói bằng Docker, tự động trích xuất 
 ---
 
 ## Thiết Kế Cơ Sở Dữ Liệu (Database Schema)
-Dữ liệu thời tiết được lưu vào schema `p1` trong cơ sở dữ liệu `database01`:
+Dữ liệu thời tiết được lưu vào schema `p1` trong cơ sở dữ liệu mục tiêu:
 
 | Tên Cột | Kiểu Dữ Liệu | Ràng Buộc / Mô Tả |
 |---|---|---|
@@ -86,3 +84,4 @@ Dữ liệu thời tiết được lưu vào schema `p1` trong cơ sở dữ li�
 | `utc_offset` | `TEXT` | Độ lệch múi giờ UTC (ví dụ: `+07:00`) |
 
 *Lưu ý: Ràng buộc duy nhất `unique_city_time UNIQUE (city, observation_time)` giúp đảm bảo không có bản ghi trùng lặp cho cùng một thành phố tại cùng một thời điểm quan trắc.*
+
